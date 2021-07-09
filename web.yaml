@@ -1,0 +1,68 @@
+# Deployment for web UI
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-frontend
+  labels:
+    app: web
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: web
+  template:
+    metadata:
+      labels:
+        app: web
+    spec:
+      containers:
+        - name: web
+          image: images.willbutton.com/nginx-web/web:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            httpGet:
+              port: 8080
+              path: /
+            initialDelaySeconds: 1
+            periodSeconds: 10
+
+---
+
+# Service used as ingress target
+kind: Service
+apiVersion: v1
+metadata:
+  name: web
+spec:
+  type: ClusterIP
+  selector:
+    app: web
+  ports:
+    - port: 8080
+      targetPort: 8080
+
+---
+
+# Ingress for exposing the service with TLS support
+kind: Ingress
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: web-tls
+spec:
+  tls:
+    - hosts:
+        - app.willbutton.com
+      secretName: web-ui-cert
+  rules:
+    - host: app.willbutton.com
+      http:
+        paths:
+          - backend:
+              service:
+                name: web
+                port:
+                  number: 8080
+            path: /
+            pathType: Prefix
