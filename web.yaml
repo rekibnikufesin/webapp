@@ -59,10 +59,17 @@ spec:
     - host: app.willbutton.com
       http:
         paths:
-          - backend:
+          - path: /
+            pathType: Prefix
+            backend:
               service:
                 name: web
                 port:
                   number: 8080
-            path: /
+          - path: /api
             pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 3000
